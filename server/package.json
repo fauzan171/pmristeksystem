@@ -4,11 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "npx tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
+    "postinstall": "prisma generate",
     "start": "npx tsx src/index.ts",
     "deploy": "bash deploy.sh",
     "dev:worker": "wrangler dev",
-    "seed": "npx tsx prisma/seed.ts"
+    "seed": "npx tsx prisma/seed.ts",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"

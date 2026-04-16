@@ -7,37 +7,19 @@ compatibility_flags = ["nodejs_compat", "nodejs_compat_v2"]
 NODE_ENV = "production"
 
 # ============================================================
-# Secrets (set via: npx wrangler secret put <NAME>)
+# Secrets (set via Cloudflare Dashboard or CLI):
+#   npx wrangler secret put DATABASE_URL
+#   npx wrangler secret put JWT_SECRET
+#   npx wrangler secret put JWT_EXPIRES_IN
+#   npx wrangler secret put CORS_ORIGIN
+#   npx wrangler secret put WA_SESSION_ENCRYPTION_KEY
 # ============================================================
-# wrangler secret put DATABASE_URL
-# wrangler secret put JWT_SECRET
-# wrangler secret put JWT_EXPIRES_IN
-# wrangler secret put CORS_ORIGIN
-# wrangler secret put WA_SESSION_ENCRYPTION_KEY
 
 # ============================================================
 # Hyperdrive - PostgreSQL connection pooling
 # ============================================================
-# Hyperdrive accelerates database queries by pooling connections
-# and caching frequently accessed data at the edge.
+# After creating Hyperdrive, uncomment and add the ID:
 #
-# Setup steps:
-#   1. Create a Hyperdrive configuration:
-#      npx wrangler hyperdrive create rpms-db-hyperdrive \
-#        --connection-string="postgresql://user:pass@host:5432/dbname"
-#
-#   2. Copy the returned Hyperdrive ID into the id field below.
-#
-#   3. The Hyperdrive connection is available in your Worker as
-#      env.HYPERDRIVE (provides .connectionString for Prisma/PG).
-#
-#   4. Set DATABASE_URL secret to the same connection string
-#      (used by Prisma as the fallback when HYPERDRIVE is absent).
-# ============================================================
-
-[[hyperdrive]]
-name = "rpms-db-hyperdrive"
-id = "YOUR_HYPERDRIVE_ID_HERE"
-# The connection string below is used only at `wrangler hyperdrive create` time.
-# Replace with your actual PostgreSQL connection string, then run the create command.
-# localConnectionString = "postgresql://user:password@127.0.0.1:5432/rpms_db"
+# [[hyperdrive]]
+# name = "rpms-db-hyperdrive"
+# id = "YOUR_HYPERDRIVE_ID_HERE"
