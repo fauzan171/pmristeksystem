@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  planning
+  ongoing
+  on_hold
+  completed
+}
+
+enum Priority {
+  high
+  medium
+  low
+}
+
+enum NotificationType {
+  deadline_reminder
+  overdue_alert
+  progress_update
+  custom_broadcast
+}
+
+enum NotificationStatus {
+  pending
+  sent
+  delivered
+  failed
+}
+
+enum WASessionStatus {
+  connected
+  disconnected
+  expired
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  role         String   @default("pm")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  projects           Project[]
+  progressNotes      ProgressNote[]
+  activityLogs       ActivityLog[]
+  whatsappSessions   WhatsappSession[]
+  notifications      Notification[]
+  notificationSettings NotificationSetting?
+
+  @@map("users")
+}
+
+model Project {
+  id           String   @id @default(uuid())
+  projectCode  String   @unique @map("project_code")
+  name         String
+  description  String?
+  status       ProjectStatus @default(planning)
+  priority     Priority     @default(medium)
+  progress     Int      @default(0)
+  startDate    DateTime? @map("start_date")
+  deadline     DateTime @map("deadline")
+  waGroupName  String?  @map("wa_group_name")
+  waGroupId    String?  @map("wa_group_id")
+  lastNote     String?  @map("last_note")
+  lastUpdatedAt DateTime @default(now()) @map("last_updated_at")
+  pmId         String   @map("pm_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  pm           User     @relation(fields: [pmId], references: [id], onDelete: Cascade)
+  notes        ProgressNote[]
+  notifications Notification[]
+  activityLogs ActivityLog[]
+
+  @@index([status])
+  @@index([deadline])
+  @@index([pmId])
+  @@index([priority])
+  @@map("projects")
+}
+
+model ProgressNote {
+  id         String   @id @default(uuid())
+  projectId  String   @map("project_id")
+  content    String
+  createdBy  String   @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [createdBy], references: [id])
+
+  @@index([projectId])
+  @@index([createdAt(sort: Desc)])
+  @@map("progress_notes")
+}
+
+model Notification {
+  id             String             @id @default(uuid())
+  projectId      String             @map("project_id")
+  type           NotificationType
+  message        String
+  recipientGroup String?           @map("recipient_group")
+  recipientId    String?           @map("recipient_id")
+  triggerType    String?           @map("trigger_type")
+  status         NotificationStatus @default(pending)
+  sentAt         DateTime?         @map("sent_at")
+  errorMessage   String?           @map("error_message")
+  createdBy      String?           @map("created_by")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  project        Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user           User?              @relation(fields: [createdBy], references: [id])
+
+  @@index([projectId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  projectId   String?  @map("project_id")
+  action      String
+  description String
+  oldValue    String?  @map("old_value")
+  newValue    String?  @map("new_value")
+  performedBy String   @map("performed_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user        User     @relation(fields: [performedBy], references: [id])
+
+  @@index([projectId])
+  @@index([createdAt(sort: Desc)])
+  @@map("activity_logs")
+}
+
+model WhatsappSession {
+  id            String          @id @default(uuid())
+  userId        String          @map("user_id")
+  sessionData   String          @map("session_data")
+  phoneNumber   String?         @map("phone_number")
+  status        WASessionStatus @default(disconnected)
+  connectedAt   DateTime?       @map("connected_at")
+  lastActivity  DateTime        @default(now()) @map("last_activity")
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@map("whatsapp_sessions")
+}
+
+model NotificationSetting {
+  id                     String   @id @default(uuid())
+  userId                 String   @unique @map("user_id")
+  deadlineReminderDays   String   @default("3,1") @map("deadline_reminder_days")
+  overdueNotifyEnabled   Boolean  @default(true) @map("overdue_notify_enabled")
+  overdueNotifyInterval  String   @default("daily") @map("overdue_notify_interval")
+  notifyTime             String   @default("09:00") @map("notify_time")
+  templateDeadline       String?  @map("template_deadline")
+  templateOverdue        String?  @map("template_overdue")
+  templateProgress       String?  @map("template_progress")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
